@@ -4,7 +4,7 @@ networks:
     internal: false
   backend:
     driver: bridge
-    internal: true        # no internet for DB network
+    internal: false
 
 volumes:
   mongo-data:
@@ -99,8 +99,8 @@ services:
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=strongUIpassword
     networks:
-      - backend             #  FIX: moved from frontend to backend
-                            #    so it can resolve 'mongodb' hostname
+      - frontend
+      - backend
     cap_drop:
       - ALL
     security_opt:
