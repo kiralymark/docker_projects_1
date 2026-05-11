@@ -1,0 +1,109 @@
+networks:
+  frontend:
+    driver: bridge
+    internal: false
+  backend:
+    driver: bridge
+    internal: true        # no internet for DB network
+
+volumes:
+  mongo-data:
+
+secrets:
+  mongo_user:
+    file: ./secrets/mongo_user.txt
+  mongo_pass:
+    file: ./secrets/mongo_pass.txt
+
+services:
+
+  my-app:
+    build: .
+    image: my-app:local
+    ports:
+      - "127.0.0.1:3000:3000"
+    secrets:
+      - mongo_user
+      - mongo_pass
+    environment:
+      - MONGO_DB_USERNAME_FILE=/run/secrets/mongo_user
+      - MONGO_DB_PWD_FILE=/run/secrets/mongo_pass
+    networks:
+      - frontend
+      - backend
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: "1001:1001"
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:5.0.26
+    ports:
+      - "127.0.0.1:27017:27017"
+    secrets:
+      - mongo_user
+      - mongo_pass
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_user
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_pass
+    networks:
+      - backend             # backend only, no frontend
+    volumes:
+      - mongo-data:/data/db
+    #  FIX: MongoDB needs to write data — no read_only here
+    #  FIX: MongoDB needs chown/setuid to switch to its internal user
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN              # needs to own /data/db files
+      - SETUID             # needs to switch to mongodb user
+      - SETGID             # needs to switch group
+      - DAC_OVERRIDE       # needs to read/write its own files
+      - FOWNER             # bypass permission checks on owned files
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/run/mongodb
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  mongo-express:
+    image: mongo-express:1.0.0-20
+    restart: on-failure:5        #  FIX: was 'always', now stops after 5 fails
+    ports:
+      - "127.0.0.1:8081:8081"
+    secrets:
+      - mongo_user
+      - mongo_pass
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME_FILE=/run/secrets/mongo_user
+      - ME_CONFIG_MONGODB_ADMINPASSWORD_FILE=/run/secrets/mongo_pass
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=strongUIpassword
+    networks:
+      - backend             #  FIX: moved from frontend to backend
+                            #    so it can resolve 'mongodb' hostname
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - mongodb

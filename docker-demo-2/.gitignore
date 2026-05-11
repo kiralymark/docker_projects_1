@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+.idea/
+.env
+.env.*
+secrets/          # NEVER commit secrets
+*.pem
+*.key
+*.cert
