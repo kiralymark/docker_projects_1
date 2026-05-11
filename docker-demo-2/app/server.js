@@ -5,8 +5,19 @@ let MongoClient = require('mongodb').MongoClient;
 let bodyParser = require('body-parser');
 let app = express();
 
-const DB_USER = process.env.MONGO_DB_USERNAME
-const DB_PASS = process.env.MONGO_DB_PWD
+
+// Function to read the secret from the file path provided by Docker
+function readSecret(filePath) {
+    try {
+        return fs.readFileSync(filePath, 'utf8').trim();
+    } catch (err) {
+        return null;
+    }
+}
+
+const DB_USER = readSecret(process.env.MONGO_DB_USERNAME_FILE) || process.env.MONGO_DB_USERNAME;
+const DB_PASS = readSecret(process.env.MONGO_DB_PWD_FILE) || process.env.MONGO_DB_PWD;
+
 
 app.use(bodyParser.urlencoded({
   extended: true
@@ -17,8 +28,13 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, "index.html"));
   });
 
+
 // when starting app locally, use "mongodb://admin:password@localhost:27017" URL instead
-let mongoUrlDockerCompose = `mongodb://${DB_USER}:${DB_PASS}@mongodb`;
+//let mongoUrlDockerCompose = `mongodb://${DB_USER}:${DB_PASS}@mongodb`;
+
+// Update your connection string to include the port and authentication source
+let mongoUrlDockerCompose = `mongodb://${DB_USER}:${DB_PASS}@mongodb:27017/?authSource=admin`;
+
 
 // pass these options to mongo client connect request to avoid DeprecationWarning for current Server Discovery and Monitoring engine
 let mongoClientOptions = { useNewUrlParser: true, useUnifiedTopology: true };

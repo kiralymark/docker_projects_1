@@ -11,9 +11,18 @@ Docker compose use, starting the application...
 
 
 #### Terminal commands used:
-  
---
-  
+
+docker-compose -f docker-compose.yaml up
+
+docker-compose -f docker-compose.yaml start
+
+docker-compose up --build
+
+
+
+
+! to do
+when doing a restart remove ALL VOLUMES
 
 
 
