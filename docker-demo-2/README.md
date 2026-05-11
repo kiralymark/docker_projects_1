@@ -33,12 +33,14 @@ Open a web browser, type http://127.0.0.1:3000/
 and then press enter.
 
 
+To access DB:  
+http://127.0.0.1:8081/ 
 
-
-
-
-
-
+Current login data:  
+username: admin
+  
+pass: strongUIpassword
+  
 
 
   
